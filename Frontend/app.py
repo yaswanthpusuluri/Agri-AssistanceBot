@@ -1,7 +1,7 @@
 # -------------------------------
 # 🌾 Farmer Assistant UI (Improved)
 # -------------------------------
-API_URL = "https://agri-assistancebot-backend.onrender.com/docs"
+API_URL = "https://agri-assistancebot-backend.onrender.com/ask"
 import streamlit as st
 import requests
 
@@ -58,7 +58,7 @@ if user_input:
         full_text = ""
 
         with requests.post(
-            "http://127.0.0.1:8000/ask",
+            API_URL,
             json={"question": user_input},
             stream=True
         ) as r:
