@@ -1,4 +1,4 @@
- ## 🌾 Farmer Assistant (RAG + AI Agent)
+## 🌾 Farmer Assistant (RAG + AI Agent)
 
 An AI-powered Farmer Assistant that provides accurate answers to agriculture-related questions by combining **local knowledge (RAG)** with **real-time web search**.
 
@@ -59,71 +59,120 @@ RAG Search   Web Search     (if needed both)
 
 ---
 
-## 📂 Project Structure
+## 📂 Project Structure (Production)
 
 ```text
 project/
-│── app.py                # Streamlit UI
-│── main.py               # FastAPI backend (API + Agent)
-│── chroma_db/            # Persisted Chroma vector database
-│── requirements.txt      # Dependencies
-│── .env                  # API keys
+│
+├── backend/
+│   ├── main.py
+│   ├── chroma_db/
+│   ├── requirements.txt
+│   ├── runtime.txt
+│
+├── frontend/
+│   ├── app.py
+│   ├── requirements.txt
+│
+├── README.md
 ```
 
 ---
 
-## ⚙️ Setup Instructions
+## ⚙️ Local Setup
 
-### 1. Clone the Repository
+### 1. Clone Repository
 
 ```bash
 git clone <your-repo-url>
-cd <your-project-folder>
+cd project
 ```
 
----
-
-### 2. Install Dependencies
+### 2. Install Backend Dependencies
 
 ```bash
+cd backend
 pip install -r requirements.txt
 ```
 
----
-
 ### 3. Set Environment Variables
 
-Create a `.env` file:
+Create `.env` inside `backend/`:
 
 ```env
 GOOGLE_API_KEY=your_google_api_key
 TAVILY_API_KEY=your_tavily_api_key
 ```
 
----
-
-### 4. (Optional) Build Vector Database
-
-If `chroma_db/` is not included:
-
-```bash
-python build_vectordb.py
-```
-
----
-
-### 5. Run Backend (FastAPI)
+### 4. Run Backend
 
 ```bash
 uvicorn main:app --reload
 ```
 
----
-
-### 6. Run Frontend (Streamlit)
+### 5. Run Frontend
 
 ```bash
+cd ../frontend
+pip install -r requirements.txt
 streamlit run app.py
+```
+
+---
+
+# 🚀 Production Deployment
+
+## 🔹 Backend Deployment (Render)
+
+1. Push repo to GitHub
+2. Go to Render → **New Web Service**
+3. Connect repo
+
+### Settings:
+
+* **Root Directory:** `backend`
+* **Build Command:**
+
+```bash
+pip install -r requirements.txt
+```
+
+* **Start Command:**
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 10000
+```
+
+### Add Environment Variables:
+
+```env
+GOOGLE_API_KEY=xxxx
+TAVILY_API_KEY=xxxx
+HF_TOKEN=xxxx (optional)
+```
+
+👉 After deploy:
+
+```
+https://your-backend.onrender.com/ask
+```
+
+---
+
+## 🔹 Frontend Deployment (Streamlit Cloud)
+
+1. Go to Streamlit Cloud
+2. Connect same GitHub repo
+3. Select file:
+
+```
+frontend/app.py
+```
+
+### Update API URL in `app.py`:
+
+```python
+API_URL = "https://your-backend.onrender.com/ask"
 ```
 
 ---
@@ -139,7 +188,7 @@ streamlit run app.py
 
 ## 🔍 Key Highlights
 
-* Combines **RAG + Real-time Search** in a single system
+* Combines **RAG + Real-time Search**
 * Demonstrates **tool-using AI agents**
 * Implements **streaming UI like ChatGPT**
 * Designed for **real-world agricultural use cases**
@@ -148,18 +197,17 @@ streamlit run app.py
 
 ## ⚠️ Limitations
 
-* Streaming is simulated (character-by-character)
-* Depends on external APIs (Gemini, Tavily)
-* Vector database must be pre-built or included
+* Streaming is simulated
+* Depends on external APIs
+* Vector database must be pre-built
 
 ---
 
 ## 🔮 Future Improvements
 
 * 🌍 Multilingual support (Telugu, Hindi)
-* 🎤 Voice input for farmers
-* ⚡ True token-level streaming
-* ☁️ Cloud deployment (Railway)
+* 🎤 Voice input
+* ⚡ True token streaming
 * 📱 Mobile-friendly UI
 
 ---
@@ -170,18 +218,16 @@ Built as a **resume-ready AI project** demonstrating:
 
 * RAG pipelines
 * AI agents with tools
-* Full-stack AI application (API + UI)
+* Full-stack AI system
 
 ---
 
 ## 🎯 Why This Project Matters
 
-This project demonstrates the ability to:
-
-* Build **end-to-end AI systems**
-* Integrate **LLMs with external tools**
-* Design **real-world solutions using Generative AI**
+* Shows **end-to-end AI system design**
+* Demonstrates **real-world GenAI usage**
+* Combines **LLMs + tools + APIs**
 
 ---
 
-⭐ If you found this useful, consider giving it a star!
+⭐ Star this repo if you found it useful!
