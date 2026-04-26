@@ -133,40 +133,35 @@ def health():
 # -------------------------------
 @app.post("/ask")
 def ask(q: Query):
+    try:
+        response = agent.invoke({
+            "messages": [{"role": "user", "content": q.question}]
+        })
 
-    def stream():
-        try:
-            response = agent.invoke({
-                "messages": [{"role": "user", "content": q.question}]
-            })
+        print("🔍 RAW RESPONSE:", response)
 
-            print("🔍 RAW RESPONSE:", response)
+        text = ""
 
-            text = ""
+        # ✅ safe extraction
+        if isinstance(response, dict):
+            msgs = response.get("messages", [])
 
-            # ✅ safer extraction
-            if isinstance(response, dict):
-                msgs = response.get("messages", [])
+            for msg in reversed(msgs):
+                if hasattr(msg, "content") and msg.content:
+                    text = msg.content
+                    break
 
-                for msg in reversed(msgs):
-                    if hasattr(msg, "content") and msg.content:
-                        text = msg.content
-                        break
+        # ✅ fallback
+        if not text.strip():
+            text = "No response generated. Please try again."
 
-            # ✅ fallback (VERY IMPORTANT)
-            if not text.strip():
-                text = "I'm unable to generate a proper answer right now. Please try again."
+        print("✅ FINAL TEXT:", text)
 
-            print("✅ FINAL TEXT:", text)
+        return {"answer": text}
 
-            for char in text:
-                yield char
-
-        except Exception as e:
-            print("❌ ERROR:", e)
-            yield "Server error occurred"
-
-    return StreamingResponse(stream(), media_type="text/plain")
+    except Exception as e:
+        print("❌ ERROR:", e)
+        return {"answer": "Server error occurred"}
 # -------------------------------
 # RUN SERVER
 # -------------------------------
