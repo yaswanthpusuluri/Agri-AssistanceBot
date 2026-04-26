@@ -1,7 +1,6 @@
 
 #  Farmer Assistant API
 
-
 import os
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -13,7 +12,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 from fastapi.responses import StreamingResponse
 
-
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
@@ -22,9 +20,8 @@ from langchain_chroma import Chroma
 # -------------------------------
 app = FastAPI()
 
-# -------------------------------
+
 # ENV
-# -------------------------------
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -36,10 +33,23 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
 
-# VECTOR STORE (LAZY LOAD)
+# VECTOR STORE (LOAD ON STARTUP)
 
-vectorstore = None
+print("📦 Loading embeddings + Chroma DB...")
+
 persist_dir = os.path.join(os.getcwd(), "chroma_db")
+
+embedding = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2",
+    model_kwargs={"device": "cpu"}  # important for Render
+)
+
+vectorstore = Chroma(
+    persist_directory=persist_dir,
+    embedding_function=embedding
+)
+
+print("✅ Vector DB Loaded")
 
 
 # RAG TOOL
@@ -48,29 +58,14 @@ persist_dir = os.path.join(os.getcwd(), "chroma_db")
 def rag_search(query: str) -> str:
     """Search crop-related knowledge from local database."""
 
-    global vectorstore
-
-    if vectorstore is None:
-        print("📦 Loading embeddings + Chroma DB...")
-
-        embedding = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
-        )
-
-        vectorstore = Chroma(
-            persist_directory=persist_dir,
-            embedding_function=embedding
-        )
-
     docs = vectorstore.similarity_search(query, k=5)
 
     results = [doc.page_content for doc in docs]
 
     if not results:
-        return "NOTFOUND"
+        return "No relevant data found."
 
     return "\n".join(results)
-
 
 
 # WEB TOOL
@@ -85,7 +80,7 @@ def web_search(query: str) -> str:
         results = response.get("results", [])
 
         if not results:
-            return "NOTFOUND"
+            return "No web results found."
 
         output = []
         for r in results:
@@ -95,8 +90,7 @@ def web_search(query: str) -> str:
 
     except Exception as e:
         print("❌ Web search failed:", e)
-        return "WEB_ERROR"
-
+        return "Web search error"
 
 
 # LLM + AGENT
@@ -114,39 +108,25 @@ agent = create_agent(
 You are a Farmer Support Assistant.
 
 Rules:
-
-1. If question has multiple parts:
-   - Break it into sub-questions
-
-2. Use RAG for:
-   - crops, fertilizers, soil
-
-3. Use web_search for:
-   - market prices, weather, news.
-
-4. You can use BOTH tools if required but do not use your own knowledge.
-
-5. Combine answers clearly.
-
-6. Explain answers simply for farmers.
+1. Use RAG for crops, fertilizers, soil.
+2. Use web_search for prices, weather, news.
+3. You can use BOTH tools.
+4. Explain simply for farmers.
 """
 )
 
-# -------------------------------
+
 # REQUEST MODEL
-# -------------------------------
+
 class Query(BaseModel):
     question: str
 
 
-
-# HEALTH CHECK (IMPORTANT for Render)
+# HEALTH CHECK
 
 @app.get("/")
 def health():
     return {"status": "ok"}
-
-
 
 # API ENDPOINT
 
@@ -164,13 +144,11 @@ def ask(q: Query):
 
             if isinstance(content, str):
                 text = content
-
             elif isinstance(content, list):
                 text = ""
                 for item in content:
                     if isinstance(item, dict) and "text" in item:
                         text += item["text"]
-
             else:
                 text = str(content)
 
@@ -183,9 +161,7 @@ def ask(q: Query):
 
     return StreamingResponse(stream(), media_type="text/plain")
 
-
-
-# RUN SERVER (PORT FIX)
+# RUN SERVER
 
 if __name__ == "__main__":
     import uvicorn
