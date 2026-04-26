@@ -54,7 +54,7 @@ def rag_search(query: str) -> str:
         print("📦 Loading embeddings + Chroma DB...")
 
         embedding = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-mpnet-base-v2"
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
 
         vectorstore = Chroma(
