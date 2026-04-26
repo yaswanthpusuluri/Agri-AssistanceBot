@@ -140,32 +140,33 @@ def ask(q: Query):
                 "messages": [{"role": "user", "content": q.question}]
             })
 
+            print("🔍 RAW RESPONSE:", response)
+
             text = ""
 
-            if isinstance(response, dict) and "messages" in response:
-                msgs = response["messages"]
+            # ✅ safer extraction
+            if isinstance(response, dict):
+                msgs = response.get("messages", [])
 
-                if msgs:
-                    last = msgs[-1]
+                for msg in reversed(msgs):
+                    if hasattr(msg, "content") and msg.content:
+                        text = msg.content
+                        break
 
-                    if hasattr(last, "content") and last.content:
-                        text = last.content
-
-            if not text:
-                text = str(response)
-
+            # ✅ fallback (VERY IMPORTANT)
             if not text.strip():
-                text = "Sorry, I couldn't generate a response."
+                text = "I'm unable to generate a proper answer right now. Please try again."
+
+            print("✅ FINAL TEXT:", text)
 
             for char in text:
                 yield char
 
         except Exception as e:
             print("❌ ERROR:", e)
-            yield "Error occurred"
+            yield "Server error occurred"
 
     return StreamingResponse(stream(), media_type="text/plain")
-
 # -------------------------------
 # RUN SERVER
 # -------------------------------
