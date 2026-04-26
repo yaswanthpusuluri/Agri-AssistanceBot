@@ -1,0 +1,176 @@
+[
+  {
+    "category": "Cereal",
+    "crop": "Paddy (Rice)",
+    "major_diseases": [
+      "Rice blast",
+      "Bacterial leaf blight",
+      "Sheath blight",
+      "Brown spot",
+      "False smut"
+    ]
+  },
+  {
+    "category": "Cereal",
+    "crop": "Maize",
+    "major_diseases": [
+      "Turcicum leaf blight",
+      "Maydis leaf blight",
+      "Common rust",
+      "Downy mildew",
+      "Banded leaf and sheath blight"
+    ]
+  },
+  {
+    "category": "Cereal",
+    "crop": "Jowar (Sorghum)",
+    "major_diseases": [
+      "Anthracnose",
+      "Zonate leaf spot",
+      "Grain mold",
+      "Downy mildew"
+    ]
+  },
+  {
+    "category": "Cereal",
+    "crop": "Millets",
+    "major_diseases": [
+      "Blast (in small millets)",
+      "Downy mildew",
+      "Smut",
+      "Leaf spot"
+    ]
+  },
+  {
+    "category": "Pulse",
+    "crop": "Black gram (Urad)",
+    "major_diseases": [
+      "Yellow mosaic virus",
+      "Cercospora leaf spot",
+      "Powdery mildew",
+      "Dry root rot"
+    ]
+  },
+  {
+    "category": "Pulse",
+    "crop": "Red gram (Pigeon pea)",
+    "major_diseases": [
+      "Fusarium wilt",
+      "Sterility mosaic disease",
+      "Phytophthora blight"
+    ]
+  },
+  {
+    "category": "Pulse",
+    "crop": "Bengal gram (Chickpea)",
+    "major_diseases": [
+      "Fusarium wilt",
+      "Ascochyta blight",
+      "Rust"
+    ]
+  },
+  {
+    "category": "Oilseed",
+    "crop": "Groundnut",
+    "major_diseases": [
+      "Early leaf spot",
+      "Late leaf spot",
+      "Rust",
+      "Collar rot",
+      "Stem rot"
+    ]
+  },
+  {
+    "category": "Oilseed",
+    "crop": "Sesame",
+    "major_diseases": [
+      "Alternaria leaf blight",
+      "Cercospora leaf spot",
+      "Powdery mildew",
+      "Phyllody"
+    ]
+  },
+  {
+    "category": "Fiber",
+    "crop": "Cotton",
+    "major_diseases": [
+      "Angular leaf spot (black arm)",
+      "Grey mildew",
+      "Boll rot",
+      "Root rot"
+    ]
+  },
+  {
+    "category": "Commercial",
+    "crop": "Tobacco",
+    "major_diseases": [
+      "Brown spot",
+      "Tobacco mosaic virus",
+      "Black shank",
+      "Blue mold",
+      "Fusarium wilt"
+    ]
+  },
+  {
+    "category": "Cereal",
+    "crop": "Finger millet (Ragi)",
+    "major_diseases": [
+      "Blast",
+      "Cercospora leaf spot",
+      "Downy mildew (green ear)"
+    ]
+  },
+  {
+    "category": "Cereal",
+    "crop": "Pearl millet (Bajra)",
+    "major_diseases": [
+      "Downy mildew",
+      "Smut",
+      "Ergot",
+      "Rust"
+    ]
+  },
+  {
+    "category": "Pulse",
+    "crop": "Green gram (Moong)",
+    "major_diseases": [
+      "Yellow mosaic virus",
+      "Powdery mildew",
+      "Cercospora leaf spot"
+    ]
+  },
+  {
+    "category": "Oilseed",
+    "crop": "Sunflower",
+    "major_diseases": [
+      "Sunflower necrosis disease",
+      "Alternaria leaf blight",
+      "Downy mildew",
+      "Rust",
+      "Head rot"
+    ]
+  },
+  {
+    "category": "Commercial",
+    "crop": "Chilli (Mirchi)",
+    "major_diseases": [
+      "Chilli leaf curl disease",
+      "Mosaic virus",
+      "Anthracnose and fruit rot",
+      "Fusarium wilt",
+      "Powdery mildew",
+      "Bacterial wilt",
+      "Cercospora leaf spot",
+      "Phytophthora leaf blight and fruit rot"
+    ]
+  },
+  {
+    "category": "Commercial",
+    "crop": "Turmeric",
+    "major_diseases": [
+      "Rhizome rot",
+      "Leaf spot",
+      "Leaf blotch"
+    ]
+  }
+]

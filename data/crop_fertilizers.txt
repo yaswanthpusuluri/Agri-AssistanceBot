@@ -1,0 +1,17 @@
+Cereal - Paddy (Rice): For irrigated medium and long-duration varieties, about 150:50:50 kg N:P2O5:K2O per ha is commonly recommended; split N and K into 3–4 doses at basal, tillering, panicle initiation and heading.
+Cereal - Maize: A balanced dose around 150:75:75 kg N:P2O5:K2O per ha is widely used under irrigated conditions, with part as basal and the rest top-dressed at 20 and 40 days after sowing.
+Cereal - Jowar (Sorghum): Under rainfed conditions, 40:20:0 to 60:30:0 kg N:P2O5:K2O per ha as basal is common; in high-rainfall or irrigated areas about 80:40:40 kg N:P2O5:K2O per ha is recommended.
+Cereal - Millets: Small millets under rainfed conditions often receive about 40:20:20 kg N:P2O5:K2O per ha along with farmyard manure, applied mostly as basal with one top-dress of nitrogen.
+Pulse - Black gram (Urad): Typical pulse recommendation is about 30:30:30 kg N:P2O5:K2O per ha plus farmyard manure, with most nutrients applied as basal at sowing.
+Pulse - Red gram (Pigeon pea): Around 40:80:0 kg N:P2O5:K2O per ha is recommended, applied mainly as basal; pulses respond strongly to phosphorus and benefit from organic manures.
+Pulse - Bengal gram (Chickpea): Common recommendations are 15–20 kg N and 50–60 kg P2O5 per ha (and 17–20 kg K2O where soils are low in K), generally applied as a single basal dose.
+Oilseed - Groundnut: For irrigated groundnut in Andhra Pradesh, about 30:60:45 kg N:P2O5:K2O per ha is advised, usually as basal along with gypsum at pegging and ample farmyard manure.
+Oilseed - Sesame: Sesame often receives around 50:25:0 kg N:P2O5:K2O per ha plus 15–20 kg S; most of the fertilizer is applied basally at sowing in light soils.
+Fiber - Cotton: Irrigated cotton commonly uses 100:50:50 kg N:P2O5:K2O per ha with farmyard manure; nitrogen is split into 2–3 applications from sowing to square and boll formation stages.
+Commercial - Tobacco: Beedi and cigarette tobaccos typically receive about 100:50:100 kg N:P2O5:K2O per ha, applied in split doses from transplanting through early growth, with emphasis on sulphate of potash for better leaf quality.
+Cereal - Finger millet (Ragi): Finger millet under rainfed conditions often gets about 40:20:20 to 60:30:0 kg N:P2O5:K2O per ha, along with farmyard manure; half the nitrogen is basal and half top-dressed at tillering.
+Cereal - Pearl millet (Bajra): For pearl millet, about 60:30:30 kg N:P2O5:K2O per ha is a common recommendation, with half the nitrogen and all P and K as basal and the rest of N top-dressed at 25–30 days.
+Pulse - Green gram (Moong): Green gram usually receives around 20:30:30 kg N:P2O5:K2O per ha with farmyard manure, largely as basal, plus light foliar urea sprays at 15 and 30 days in some guides.
+Oilseed - Sunflower: In many Indian recommendations, irrigated sunflower hybrids get about 60:90:30 kg N:P2O5:K2O per ha or around 60:45:45 kg N:P2O5:K2O per ha, with half N and all P and K at sowing and remaining N in one or two top-dressings.
+Commercial - Chilli (Mirchi): For open-field chilli, a common schedule is FYM 25–30 t/ha plus about 30:60:30 kg N:P2O5:K2O per ha as basal, with another 30 kg N/ha top-dressed in 2–3 splits at 30, 60 and 90 days after planting.
+Commercial - Turmeric: Turmeric often receives about 30:30:60 kg N:P2O5:K2O per ha along with liberal organic manure, applied in 3 split doses from planting to 60 days after planting for good rhizome development.
