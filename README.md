@@ -2,7 +2,7 @@
 
 An AI-powered Farmer Assistant that provides accurate answers to agriculture-related questions by combining **local knowledge (RAG)** with **real-time web search**.
 
-The system uses an intelligent AI agent to dynamically choose between a **vector database (Chroma)** and **web search (Tavily)**, then generates clear and simple responses using **Google Gemini**.
+The system uses an intelligent AI agent to dynamically choose between a **vector database (Chroma)** and **web search (Tavily)**, then generates clear, simple responses using **Google Gemini**.
 
 ---
 
@@ -27,7 +27,7 @@ The system uses an intelligent AI agent to dynamically choose between a **vector
 
 ## 🧠 How It Works
 
-```text
+```text id="flow1"
 User Question
       ↓
    AI Agent
@@ -59,60 +59,101 @@ RAG Search   Web Search     (if needed both)
 
 ---
 
-## 📂 Project Structure (Production)
+## 📂 Project Structure
 
-```text
+```text id="struct1"
 project/
 │
 ├── backend/
 │   ├── main.py
-│   ├── chroma_db/
+│   ├── build_vectorstore.py   # Script to create vector DB
+│   ├── chroma_db/             # Persisted Chroma vector database
 │   ├── requirements.txt
 │   ├── runtime.txt
 │
 ├── frontend/
 │   ├── app.py
 │   ├── requirements.txt
-│--- build_vectorstore.py
+│
 ├── README.md
 ```
 
 ---
 
-## ⚙️ Local Setup
+## ⚙️ Setup Instructions (Local)
 
-### 1. Clone Repository
+### 1. Clone the Repository
 
-```bash
+```bash id="cmd1"
 git clone <your-repo-url>
 cd project
 ```
 
 ### 2. Install Backend Dependencies
 
-```bash
+```bash id="cmd2"
 cd backend
 pip install -r requirements.txt
 ```
 
 ### 3. Set Environment Variables
 
-Create `.env` inside `backend/`:
+Create a `.env` file inside `backend/`:
 
-```env
+```env id="env1"
 GOOGLE_API_KEY=your_google_api_key
 TAVILY_API_KEY=your_tavily_api_key
 ```
 
-### 4. Run Backend
+---
 
-```bash
+## 🧩 Build Vector Database (Important)
+
+Before running the app, you need to create the vector database.
+
+### Run:
+
+```bash id="cmd3"
+python build_vectorstore.py
+```
+
+👉 This will generate:
+
+```text id="out1"
+chroma_db/
+```
+
+---
+
+### ⚠️ Embedding Model Choice
+
+* ✅ **Best accuracy:**
+  `sentence-transformers/all-mpnet-base-v2`
+
+* ⚡ **Used in this project (for deployment):**
+  `sentence-transformers/all-MiniLM-L6-v2`
+
+### 💡 Why?
+
+* `mpnet-base-v2` → better semantic understanding (more accurate retrieval)
+* `MiniLM-L6-v2` → much faster, lighter, and suitable for cloud deployment
+
+👉 For production systems with more resources, **mpnet is recommended**
+👉 For fast deployment (like Render free tier), **MiniLM is used**
+
+---
+
+## ▶️ Run the Application
+
+### Backend
+
+```bash id="cmd4"
 uvicorn main:app --reload
 ```
 
-### 5. Run Frontend
+### Frontend
 
-```bash
+```bash id="cmd5"
 cd ../frontend
 pip install -r requirements.txt
 streamlit run app.py
@@ -124,37 +165,32 @@ streamlit run app.py
 
 ## 🔹 Backend Deployment (Render)
 
-1. Push repo to GitHub
-2. Go to Render → **New Web Service**
-3. Connect repo
+1. Push code to GitHub
+2. Go to Render → New Web Service
+3. Connect repository
 
 ### Settings:
 
 * **Root Directory:** `backend`
 * **Build Command:**
 
-```bash
+```bash id="cmd6"
 pip install -r requirements.txt
 ```
 
 * **Start Command:**
 
-```bash
-uvicorn main:app --host 0.0.0.0 --port 10000
+```bash id="cmd7"
+uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
-### Add Environment Variables:
+### Environment Variables:
 
-```env
-GOOGLE_API_KEY=xxxx
-TAVILY_API_KEY=xxxx
-HF_TOKEN=xxxx (optional)
-```
-
-👉 After deploy:
-
-```
-https://your-backend.onrender.com/ask
+```env id="env2"
+GOOGLE_API_KEY=your_key
+TAVILY_API_KEY=your_key
+HF_HOME=/opt/render/.cache/huggingface
+TRANSFORMERS_CACHE=/opt/render/.cache
 ```
 
 ---
@@ -162,16 +198,16 @@ https://your-backend.onrender.com/ask
 ## 🔹 Frontend Deployment (Streamlit Cloud)
 
 1. Go to Streamlit Cloud
-2. Connect same GitHub repo
-3. Select file:
+2. Connect GitHub repo
+3. Select:
 
-```
+```text id="cmd8"
 frontend/app.py
 ```
 
-### Update API URL in `app.py`:
+### Update API URL:
 
-```python
+```python id="code1"
 API_URL = "https://your-backend.onrender.com/ask"
 ```
 
@@ -197,17 +233,18 @@ API_URL = "https://your-backend.onrender.com/ask"
 
 ## ⚠️ Limitations
 
-* Streaming is simulated
-* Depends on external APIs
-* Vector database must be pre-built
+* Streaming is simulated (character-by-character)
+* Depends on external APIs (Gemini, Tavily)
+* First request may be slow due to model loading
 
 ---
 
 ## 🔮 Future Improvements
 
 * 🌍 Multilingual support (Telugu, Hindi)
-* 🎤 Voice input
-* ⚡ True token streaming
+* 🎤 Voice input for farmers
+* ⚡ True token-level streaming
+* ☁️ GPU-based deployment for faster inference
 * 📱 Mobile-friendly UI
 
 ---
@@ -218,16 +255,18 @@ Built as a **resume-ready AI project** demonstrating:
 
 * RAG pipelines
 * AI agents with tools
-* Full-stack AI system
+* Full-stack AI application
 
 ---
 
 ## 🎯 Why This Project Matters
 
-* Shows **end-to-end AI system design**
-* Demonstrates **real-world GenAI usage**
-* Combines **LLMs + tools + APIs**
+This project demonstrates the ability to:
+
+* Build **end-to-end AI systems**
+* Integrate **LLMs with external tools**
+* Design **real-world solutions using Generative AI**
 
 ---
 
-⭐ Star this repo if you found it useful!
+⭐ If you found this useful, consider giving it a star!
