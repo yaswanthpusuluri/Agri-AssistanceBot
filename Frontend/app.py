@@ -1,5 +1,5 @@
 # -------------------------------
-# 🌾 Farmer Assistant UI (Simple)
+# 🌾 Farmer Assistant UI (Fixed)
 # -------------------------------
 
 import streamlit as st
@@ -45,19 +45,17 @@ if user_input:
             r = requests.post(
                 API_URL,
                 json={"question": user_input},
-                stream=True
+                timeout=60
             )
 
-            for chunk in r.iter_content(chunk_size=10):
-                if chunk:
-                    text = chunk.decode("utf-8")
-                    full_text += text
-                    placeholder.markdown(full_text + "▌")
+            if r.status_code == 200:
+                full_text = r.json().get("answer", "")
+            else:
+                full_text = f"Error: {r.status_code}"
 
-        except:
-            full_text = "⚠️ Server is busy. Please try again."
+        except Exception as e:
+            full_text = f"⚠️ Server error: {e}"
 
-        # final output
         placeholder.markdown(full_text)
 
     # save response
