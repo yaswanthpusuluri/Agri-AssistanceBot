@@ -1,7 +1,7 @@
 # -------------------------------
 # 🌾 Farmer Assistant UI (Improved)
 # -------------------------------
-
+API_URL = "https://agri-assistancebot-backend.onrender.com/ask"
 import streamlit as st
 import requests
 
