@@ -1,4 +1,3 @@
-
 #  Farmer Assistant API
 
 import os
@@ -12,7 +11,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 from fastapi.responses import StreamingResponse
 
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
 # -------------------------------
@@ -20,40 +18,31 @@ from langchain_chroma import Chroma
 # -------------------------------
 app = FastAPI()
 
-
 # ENV
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
-
 # TOOLS INIT
-
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
-
-# VECTOR STORE (LOAD ON STARTUP)
-
-print("📦 Loading embeddings + Chroma DB...")
+# -------------------------------
+# VECTOR STORE (LIGHTWEIGHT LOAD)
+# -------------------------------
+print("📦 Loading Chroma DB (no embeddings)...")
 
 persist_dir = os.path.join(os.getcwd(), "chroma_db")
 
-embedding = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2",
-    model_kwargs={"device": "cpu"}  # important for Render
-)
-
 vectorstore = Chroma(
-    persist_directory=persist_dir,
-    embedding_function=embedding
+    persist_directory=persist_dir
 )
 
-print("✅ Vector DB Loaded")
+print("✅ Vector DB Loaded (light mode)")
 
-
+# -------------------------------
 # RAG TOOL
-
+# -------------------------------
 @tool
 def rag_search(query: str) -> str:
     """Search crop-related knowledge from local database."""
@@ -67,9 +56,9 @@ def rag_search(query: str) -> str:
 
     return "\n".join(results)
 
-
+# -------------------------------
 # WEB TOOL
-
+# -------------------------------
 @tool
 def web_search(query: str) -> str:
     """Search real-time info like market prices, weather."""
@@ -92,9 +81,9 @@ def web_search(query: str) -> str:
         print("❌ Web search failed:", e)
         return "Web search error"
 
-
+# -------------------------------
 # LLM + AGENT
-
+# -------------------------------
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     temperature=0,
@@ -108,28 +97,40 @@ agent = create_agent(
 You are a Farmer Support Assistant.
 
 Rules:
-1. Use RAG for crops, fertilizers, soil.
-2. Use web_search for prices, weather, news.
-3. You can use BOTH tools.
-4. Explain simply for farmers.
+
+1. If question has multiple parts:
+   - Break it into sub-questions
+
+2. Use RAG for:
+   - crops, fertilizers, soil
+
+3. Use web_search for:
+   - market prices, weather, news.
+
+4. You can use BOTH tools if required but do not use your own knowledge.
+
+5. Combine answers clearly.
+
+6. explain answers simply for farmers.
 """
 )
 
-
+# -------------------------------
 # REQUEST MODEL
-
+# -------------------------------
 class Query(BaseModel):
     question: str
 
-
+# -------------------------------
 # HEALTH CHECK
-
+# -------------------------------
 @app.get("/")
 def health():
     return {"status": "ok"}
 
+# -------------------------------
 # API ENDPOINT
-
+# -------------------------------
 @app.post("/ask")
 def ask(q: Query):
 
@@ -139,7 +140,6 @@ def ask(q: Query):
                 "messages": [{"role": "user", "content": q.question}]
             })
 
-            # ✅ SAFE EXTRACTION (FIXED)
             text = ""
 
             if isinstance(response, dict) and "messages" in response:
@@ -148,19 +148,15 @@ def ask(q: Query):
                 if msgs:
                     last = msgs[-1]
 
-                    if hasattr(last, "content"):
+                    if hasattr(last, "content") and last.content:
                         text = last.content
-                    else:
-                        text = str(last)
 
-            else:
+            if not text:
                 text = str(response)
 
-            # fallback if empty
-            if not text:
-                text = "No response generated."
+            if not text.strip():
+                text = "Sorry, I couldn't generate a response."
 
-            # ✅ STREAM OUTPUT
             for char in text:
                 yield char
 
@@ -170,8 +166,9 @@ def ask(q: Query):
 
     return StreamingResponse(stream(), media_type="text/plain")
 
+# -------------------------------
 # RUN SERVER
-
+# -------------------------------
 if __name__ == "__main__":
     import uvicorn
 
