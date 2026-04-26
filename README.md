@@ -73,7 +73,7 @@ project/
 ├── frontend/
 │   ├── app.py
 │   ├── requirements.txt
-│
+│--- build_vectorstore.py
 ├── README.md
 ```
 
