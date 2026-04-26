@@ -139,19 +139,28 @@ def ask(q: Query):
                 "messages": [{"role": "user", "content": q.question}]
             })
 
-            last = response["messages"][-1]
-            content = last.content if hasattr(last, "content") else str(last)
+            # ✅ SAFE EXTRACTION (FIXED)
+            text = ""
 
-            if isinstance(content, str):
-                text = content
-            elif isinstance(content, list):
-                text = ""
-                for item in content:
-                    if isinstance(item, dict) and "text" in item:
-                        text += item["text"]
+            if isinstance(response, dict) and "messages" in response:
+                msgs = response["messages"]
+
+                if msgs:
+                    last = msgs[-1]
+
+                    if hasattr(last, "content"):
+                        text = last.content
+                    else:
+                        text = str(last)
+
             else:
-                text = str(content)
+                text = str(response)
 
+            # fallback if empty
+            if not text:
+                text = "No response generated."
+
+            # ✅ STREAM OUTPUT
             for char in text:
                 yield char
 
