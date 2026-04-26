@@ -40,11 +40,12 @@ embedding = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-mpnet-base-v2"
 )
 
+persist_dir = os.path.join(os.getcwd(), "chroma_db")
+
 vectorstore = Chroma(
-    persist_directory="chroma_db",
+    persist_directory=persist_dir,
     embedding_function=embedding
 )
-
 # -------------------------------
 # RAG TOOL
 # -------------------------------
