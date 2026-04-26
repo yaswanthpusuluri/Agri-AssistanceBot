@@ -1,6 +1,6 @@
-# -------------------------------
-# 🌾 Farmer Assistant API
-# -------------------------------
+
+#  Farmer Assistant API
+
 
 import os
 from fastapi import FastAPI
@@ -13,7 +13,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 from fastapi.responses import StreamingResponse
 
-# ✅ NEW IMPORTS (Chroma)
+
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
@@ -30,32 +30,40 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
-# -------------------------------
-# LOAD TOOLS
-# -------------------------------
+
+# TOOLS INIT
+
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
-# ✅ REPLACED VECTOR DB LOADING
-embedding = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-mpnet-base-v2"
-)
 
+# VECTOR STORE (LAZY LOAD)
+
+vectorstore = None
 persist_dir = os.path.join(os.getcwd(), "chroma_db")
 
-vectorstore = Chroma(
-    persist_directory=persist_dir,
-    embedding_function=embedding
-)
-# -------------------------------
+
 # RAG TOOL
-# -------------------------------
+
 @tool
 def rag_search(query: str) -> str:
     """Search crop-related knowledge from local database."""
 
+    global vectorstore
+
+    if vectorstore is None:
+        print("📦 Loading embeddings + Chroma DB...")
+
+        embedding = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-mpnet-base-v2"
+        )
+
+        vectorstore = Chroma(
+            persist_directory=persist_dir,
+            embedding_function=embedding
+        )
+
     docs = vectorstore.similarity_search(query, k=5)
 
-    # extract text
     results = [doc.page_content for doc in docs]
 
     if not results:
@@ -63,9 +71,10 @@ def rag_search(query: str) -> str:
 
     return "\n".join(results)
 
-# -------------------------------
+
+
 # WEB TOOL
-# -------------------------------
+
 @tool
 def web_search(query: str) -> str:
     """Search real-time info like market prices, weather."""
@@ -88,9 +97,10 @@ def web_search(query: str) -> str:
         print("❌ Web search failed:", e)
         return "WEB_ERROR"
 
-# -------------------------------
+
+
 # LLM + AGENT
-# -------------------------------
+
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     temperature=0,
@@ -118,7 +128,7 @@ Rules:
 
 5. Combine answers clearly.
 
-6. explain answers simply for farmers.
+6. Explain answers simply for farmers.
 """
 )
 
@@ -128,9 +138,18 @@ Rules:
 class Query(BaseModel):
     question: str
 
-# -------------------------------
+
+
+# HEALTH CHECK (IMPORTANT for Render)
+
+@app.get("/")
+def health():
+    return {"status": "ok"}
+
+
+
 # API ENDPOINT
-# -------------------------------
+
 @app.post("/ask")
 def ask(q: Query):
 
@@ -163,3 +182,15 @@ def ask(q: Query):
             yield "Error occurred"
 
     return StreamingResponse(stream(), media_type="text/plain")
+
+
+
+# RUN SERVER (PORT FIX)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    port = int(os.environ.get("PORT", 10000))
+    print(f"🚀 Starting server on port {port}")
+
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
