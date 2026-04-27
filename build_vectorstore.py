@@ -1,31 +1,43 @@
 # -------------------------------
-# 📦 Build Chroma Vector Store (NOMIC VERSION)
+# 🌾 Build Pinecone Vector DB
 # -------------------------------
 
 import os
-import pdfplumber
 import json
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+import pdfplumber
+from dotenv import load_dotenv
 
+from langchain_text_splitters import CharacterTextSplitter
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_pinecone import PineconeVectorStore
 
+from pinecone import Pinecone, ServerlessSpec
 
 # -------------------------------
-# 📄 Load all data
+# INIT
+# -------------------------------
+load_dotenv()
+
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+
+INDEX_NAME = "farmer-db"
+
+# -------------------------------
+# 📄 LOAD DATA
 # -------------------------------
 all_text = ""
 
-# Load TXT
+# TXT
 with open("data/crop_fertilizers.txt", "r", encoding="utf-8") as f:
     all_text += f.read() + "\n"
 
-# Load JSON
+# JSON
 with open("data/crop_diseases.json", "r", encoding="utf-8") as f:
     data = json.load(f)
-    all_text += json.dumps(data) + "\n"
+    all_text += json.dumps(data)
 
-# Load PDFs
+# PDF
 for file in os.listdir("data"):
     if file.endswith(".pdf"):
         with pdfplumber.open(os.path.join("data", file)) as pdf:
@@ -37,9 +49,9 @@ for file in os.listdir("data"):
 print("✅ Data Loaded")
 
 # -------------------------------
-# ✂️ Chunking (optimized)
+# ✂️ CHUNKING
 # -------------------------------
-splitter = RecursiveCharacterTextSplitter(
+splitter = CharacterTextSplitter(
     chunk_size=500,
     chunk_overlap=100
 )
@@ -49,26 +61,47 @@ docs = splitter.create_documents([all_text])
 print(f"📚 Total chunks: {len(docs)}")
 
 # -------------------------------
-# 🧩 NOMIC EMBEDDINGS
+# 🔥 EMBEDDINGS (API - NO TORCH)
 # -------------------------------
-print("⚡ Loading Nomic embeddings...")
-
-embedding = HuggingFaceEmbeddings(
-    model_name="nomic-ai/nomic-embed-text-v1",
-    model_kwargs={"trust_remote_code": True}
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/embedding-001",
+    google_api_key=GOOGLE_API_KEY
 )
 
 print("✅ Embeddings ready")
 
 # -------------------------------
-# 🗂️ Create Chroma DB
+# 🌐 PINECONE INIT
 # -------------------------------
-vectorstore = Chroma.from_documents(
-    docs,
-    embedding=embedding,
-    persist_directory="chroma_db"
+pc = Pinecone(api_key=PINECONE_API_KEY)
+
+# Create index if not exists
+if INDEX_NAME not in [i["name"] for i in pc.list_indexes()]:
+    print("⚡ Creating Pinecone index...")
+
+    pc.create_index(
+        name=INDEX_NAME,
+        dimension=768,   # Gemini embedding dimension
+        metric="cosine",
+        spec=ServerlessSpec(
+            cloud="aws",
+            region="us-east-1"
+        )
+    )
+
+print("✅ Pinecone index ready")
+
+# Connect index
+index = pc.Index(INDEX_NAME)
+
+# -------------------------------
+# 🚀 UPLOAD TO PINECONE
+# -------------------------------
+vectorstore = PineconeVectorStore(
+    index=index,
+    embedding=embeddings
 )
 
+vectorstore.add_documents(docs)
 
-
-print("✅ Chroma DB saved in 'chroma_db/' folder")
+print("🚀 Data uploaded to Pinecone successfully!")
