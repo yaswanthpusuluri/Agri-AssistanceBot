@@ -1,4 +1,6 @@
-#  Farmer Assistant API
+# -------------------------------
+# 🌾 Farmer Assistant API (Render Optimized)
+# -------------------------------
 
 import os
 from fastapi import FastAPI
@@ -9,80 +11,92 @@ from tavily import TavilyClient
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
-from fastapi.responses import StreamingResponse
 
 from langchain_chroma import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # -------------------------------
 # INIT
 # -------------------------------
 app = FastAPI()
-
-# ENV
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
-# TOOLS INIT
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
 # -------------------------------
-# VECTOR STORE (LIGHTWEIGHT LOAD)
+# 🔥 LIGHTWEIGHT EMBEDDINGS
 # -------------------------------
-print("📦 Loading Chroma DB (no embeddings)...")
+print("⚡ Loading MiniLM embeddings...")
 
-persist_dir = os.path.join(os.getcwd(), "chroma_db")
-
-vectorstore = Chroma(
-    persist_directory=persist_dir
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2",
+    model_kwargs={"device": "cpu"},   # force CPU (safe for Render)
+    encode_kwargs={"normalize_embeddings": True}
 )
 
-print("✅ Vector DB Loaded (light mode)")
+print("✅ Embeddings loaded")
 
 # -------------------------------
-# RAG TOOL
+# 📦 LOAD VECTOR DB
+# -------------------------------
+persist_dir = os.path.join(os.getcwd(), "chroma_db")
+
+if os.path.exists(persist_dir):
+    print("📂 Loading Chroma DB...")
+    vectorstore = Chroma(
+        persist_directory=persist_dir,
+        embedding_function=embeddings
+    )
+    print("✅ Chroma DB loaded")
+else:
+    print("⚠️ No Chroma DB found")
+    vectorstore = None
+
+# -------------------------------
+# 🔎 RAG TOOL
 # -------------------------------
 @tool
 def rag_search(query: str) -> str:
     """Search crop-related knowledge from local database."""
+    try:
+        if vectorstore is None:
+            return "Knowledge base not available."
 
-    docs = vectorstore.similarity_search(query, k=5)
+        docs = vectorstore.similarity_search(query, k=3)
 
-    results = [doc.page_content for doc in docs]
+        if not docs:
+            return "No relevant data found."
 
-    if not results:
-        return "No relevant data found."
+        return "\n".join([doc.page_content for doc in docs])
 
-    return "\n".join(results)
+    except Exception as e:
+        print("❌ RAG ERROR:", e)
+        return "RAG error"
 
 # -------------------------------
-# WEB TOOL
+# 🌐 WEB TOOL
 # -------------------------------
 @tool
 def web_search(query: str) -> str:
     """Search real-time info like market prices, weather."""
-
     try:
         response = tavily.search(query=query, max_results=3)
-
         results = response.get("results", [])
 
         if not results:
             return "No web results found."
 
-        output = []
-        for r in results:
-            output.append(r.get("content"))
-
-        return "\n".join(output)
+        return "\n".join([r.get("content", "") for r in results])
 
     except Exception as e:
-        print("❌ Web search failed:", e)
+        print("❌ Web error:", e)
         return "Web search error"
 
 # -------------------------------
-# LLM + AGENT
+# 🤖 LLM + AGENT
 # -------------------------------
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
@@ -122,27 +136,28 @@ class Query(BaseModel):
     question: str
 
 # -------------------------------
-# HEALTH CHECK
+# HEALTH
 # -------------------------------
 @app.get("/")
 def health():
     return {"status": "ok"}
 
 # -------------------------------
-# API ENDPOINT
+# ASK ENDPOINT
 # -------------------------------
 @app.post("/ask")
 def ask(q: Query):
+    print("📩 Question:", q.question)
+
     try:
         response = agent.invoke({
             "messages": [{"role": "user", "content": q.question}]
         })
 
-        print("🔍 RAW RESPONSE:", response)
+        print("🔍 RAW:", response)
 
         text = ""
 
-        # ✅ safe extraction
         if isinstance(response, dict):
             msgs = response.get("messages", [])
 
@@ -151,24 +166,22 @@ def ask(q: Query):
                     text = msg.content
                     break
 
-        # ✅ fallback
         if not text.strip():
-            text = "No response generated. Please try again."
+            text = "No response generated."
 
-        print("✅ FINAL TEXT:", text)
+        print("✅ FINAL:", text)
 
         return {"answer": text}
 
     except Exception as e:
         print("❌ ERROR:", e)
-        return {"answer": "Server error occurred"}
+        return {"answer": "Server error"}
+
 # -------------------------------
-# RUN SERVER
+# RUN
 # -------------------------------
 if __name__ == "__main__":
     import uvicorn
 
     port = int(os.environ.get("PORT", 10000))
-    print(f"🚀 Starting server on port {port}")
-
     uvicorn.run("main:app", host="0.0.0.0", port=port)
