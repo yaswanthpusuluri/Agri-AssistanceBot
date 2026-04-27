@@ -256,6 +256,10 @@ API_URL = "https://agri-assistancebot-backend.onrender.com/ask"
 ## Achitecture Diagram
 ![Architecture](images/architecture.png)
 
+
+
+
+
 ### 🖥️ Chat Interface
 ![Chat UI](images/chat_ui.png)
 
