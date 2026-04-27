@@ -1,5 +1,5 @@
 # -------------------------------
-# 🌾 Farmer Assistant API (Pinecone + Gemini)
+# 🌾 Farmer Assistant API (Pinecone + Gemini - FINAL)
 # -------------------------------
 
 import os
@@ -24,7 +24,16 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-INDEX_NAME = "farmer-db"
+INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "farmer-db")
+
+# -------------------------------
+# VALIDATION (prevents 502 errors)
+# -------------------------------
+if not GOOGLE_API_KEY:
+    raise ValueError("❌ GOOGLE_API_KEY missing")
+
+if not PINECONE_API_KEY:
+    raise ValueError("❌ PINECONE_API_KEY missing")
 
 # -------------------------------
 # TOOLS INIT
@@ -32,33 +41,43 @@ INDEX_NAME = "farmer-db"
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
 # -------------------------------
-# 🔥 EMBEDDINGS (API - NO TORCH)
+# 🔥 EMBEDDINGS (NO TORCH, API BASED)
 # -------------------------------
 embeddings = GoogleGenerativeAIEmbeddings(
     model="gemini-embedding-001",
     google_api_key=GOOGLE_API_KEY
 )
 
-# -------------------------------
-# 🌐 PINECONE LOAD
-# -------------------------------
-pc = Pinecone(api_key=PINECONE_API_KEY)
-index = pc.Index(INDEX_NAME)
+print("✅ Embeddings ready")
 
-vectorstore = PineconeVectorStore(
-    index=index,
-    embedding=embeddings
-)
+# -------------------------------
+# 🌐 PINECONE INIT
+# -------------------------------
+try:
+    pc = Pinecone(api_key=PINECONE_API_KEY)
+    index = pc.Index(INDEX_NAME)
 
-print("✅ Pinecone connected")
+    vectorstore = PineconeVectorStore(
+        index=index,
+        embedding=embeddings
+    )
+
+    print("✅ Pinecone connected")
+
+except Exception as e:
+    print("❌ Pinecone error:", e)
+    vectorstore = None
 
 # -------------------------------
 # 🔎 RAG TOOL
 # -------------------------------
 @tool
 def rag_search(query: str) -> str:
-    """Search crop-related knowledge from Pinecone DB."""
+    """Search crop-related knowledge from vector DB"""
     try:
+        if vectorstore is None:
+            return "Knowledge base not available."
+
         docs = vectorstore.similarity_search(query, k=3)
 
         if not docs:
@@ -75,7 +94,7 @@ def rag_search(query: str) -> str:
 # -------------------------------
 @tool
 def web_search(query: str) -> str:
-    """Search real-time info like weather, prices."""
+    """Search real-time info like weather, prices"""
     try:
         response = tavily.search(query=query, max_results=3)
         results = response.get("results", [])
@@ -86,7 +105,7 @@ def web_search(query: str) -> str:
         return "\n".join([r.get("content", "") for r in results])
 
     except Exception as e:
-        print("❌ Web error:", e)
+        print("❌ Web ERROR:", e)
         return "Web search error"
 
 # -------------------------------
@@ -106,20 +125,12 @@ You are a Farmer Support Assistant.
 
 Rules:
 
-1. If question has multiple parts:
-   - Break it into sub-questions
-
-2. Use RAG for:
-   - crops, fertilizers, soil
-
-3. Use web_search for:
-   - market prices, weather, news.
-
-4. You can use BOTH tools if required but do not use your own knowledge.
-
-5. Combine answers clearly.
-
-6. explain answers simply for farmers.
+1. Break complex questions into parts
+2. Use RAG for crops, soil, fertilizers
+3. Use web for weather, prices, news
+4. You may use BOTH tools
+5. Do NOT use your own knowledge
+6. Explain simply for farmers
 """
 )
 
@@ -130,14 +141,14 @@ class Query(BaseModel):
     question: str
 
 # -------------------------------
-# HEALTH
+# HEALTH CHECK
 # -------------------------------
 @app.get("/")
 def health():
     return {"status": "ok"}
 
 # -------------------------------
-# ASK
+# ASK ENDPOINT
 # -------------------------------
 @app.post("/ask")
 def ask(q: Query):
@@ -147,6 +158,8 @@ def ask(q: Query):
         response = agent.invoke({
             "messages": [{"role": "user", "content": q.question}]
         })
+
+        print("🔍 RAW:", response)
 
         text = ""
 
@@ -160,6 +173,8 @@ def ask(q: Query):
 
         if not text.strip():
             text = "No response generated."
+
+        print("✅ FINAL:", text)
 
         return {"answer": text}
 
