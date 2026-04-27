@@ -259,10 +259,6 @@ API_URL = "https://agri-assistancebot-backend.onrender.com/ask"
 
 
 
-
-### 🖥️ Chat Interface
-![Chat UI](images/chat_ui.png)
-
 ---
 
 ## 🧩 Challenges Faced & Optimizations
@@ -295,6 +291,12 @@ API_URL = "https://agri-assistancebot-backend.onrender.com/ask"
 
 ---
 
+
+### 🖥️ Chat Interface
+![Chat UI](images/chat_ui.png)
+
+
+---
 ## ⚠️ Limitations
 
 * No multi-turn conversation
