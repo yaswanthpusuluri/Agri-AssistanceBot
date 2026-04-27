@@ -1,5 +1,5 @@
 # -------------------------------
-# 🌾 Farmer Assistant API (Pinecone + Gemini - LOW RAM)
+# 🌾 Farmer Assistant API (Pinecone + Gemini)
 # -------------------------------
 
 import os
@@ -24,36 +24,40 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
+INDEX_NAME = "farmer-db"
 
+# -------------------------------
+# TOOLS INIT
+# -------------------------------
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
 # -------------------------------
-# 🔥 EMBEDDINGS (API BASED - NO RAM LOAD)
+# 🔥 EMBEDDINGS (API - NO TORCH)
 # -------------------------------
 embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/embedding-001",
+    model="gemini-embedding-001",
     google_api_key=GOOGLE_API_KEY
 )
 
 # -------------------------------
-# 📦 PINECONE VECTOR STORE
+# 🌐 PINECONE LOAD
 # -------------------------------
 pc = Pinecone(api_key=PINECONE_API_KEY)
-
-index = pc.Index(PINECONE_INDEX_NAME)
+index = pc.Index(INDEX_NAME)
 
 vectorstore = PineconeVectorStore(
     index=index,
     embedding=embeddings
 )
 
+print("✅ Pinecone connected")
+
 # -------------------------------
 # 🔎 RAG TOOL
 # -------------------------------
 @tool
 def rag_search(query: str) -> str:
-    """Search crop-related knowledge from Pinecone database."""
+    """Search crop-related knowledge from Pinecone DB."""
     try:
         docs = vectorstore.similarity_search(query, k=3)
 
@@ -71,7 +75,7 @@ def rag_search(query: str) -> str:
 # -------------------------------
 @tool
 def web_search(query: str) -> str:
-    """Search real-time info like market prices, weather."""
+    """Search real-time info like weather, prices."""
     try:
         response = tavily.search(query=query, max_results=3)
         results = response.get("results", [])
@@ -86,7 +90,7 @@ def web_search(query: str) -> str:
         return "Web search error"
 
 # -------------------------------
-# 🤖 LLM
+# 🤖 LLM + AGENT
 # -------------------------------
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
@@ -94,31 +98,16 @@ llm = ChatGoogleGenerativeAI(
     google_api_key=GOOGLE_API_KEY
 )
 
-# -------------------------------
-# 🤖 AGENT
-# -------------------------------
 agent = create_agent(
     model=llm,
     tools=[rag_search, web_search],
     system_prompt="""
-You are a Farmer Support Assistant.
+You are a Farmer Assistant.
 
 Rules:
-
-1. If question has multiple parts:
-   - Break it into sub-questions
-
-2. Use RAG for:
-   - crops, fertilizers, soil
-
-3. Use web_search for:
-   - market prices, weather, news.
-
-4. You can use BOTH tools if required but do not use your own knowledge.
-
-5. Combine answers clearly.
-
-6. explain answers simply for farmers.
+- Use RAG for crops, fertilizers, soil
+- Use web for weather, prices
+- Answer simply
 """
 )
 
