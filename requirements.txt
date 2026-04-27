@@ -1,28 +1,21 @@
 # for both front end backend tools all
 Python-3.10.11
+
+fastapi
+
+uvicorn
+
 langchain
 langchain-core
 langchain-community
 langchain-google-genai
-google-generativeai
 
-langchain-huggingface
-langchain-chroma
-chromadb
+langchain-pinecone
+pinecone
 
 tavily-python
 
-sentence-transformers
-transformers
-torch
-
-pdfplumber
 python-dotenv
 
-fastapi
-uvicorn
 streamlit
 requests
-aiohttp
-
-pysqlite3-binary
