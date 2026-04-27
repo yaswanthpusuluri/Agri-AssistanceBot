@@ -1,26 +1,19 @@
+fastapi
+uvicorn
+python-dotenv
+
 langchain
 langchain-core
-langchain-community
 langchain-google-genai
-google-generativeai
-
-langchain-huggingface
 langchain-chroma
+langchain-huggingface
+
 chromadb
 
 tavily-python
 
 sentence-transformers
-transformers
 torch
 
 pdfplumber
-python-dotenv
-
-fastapi
-uvicorn
 requests
-aiohttp
-
-pysqlite3-binary
-einops
