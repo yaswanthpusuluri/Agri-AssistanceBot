@@ -1,13 +1,15 @@
 # -------------------------------
-# 📦 Build Chroma Vector Store
+# 📦 Build Chroma Vector Store (NOMIC VERSION)
 # -------------------------------
 
 import os
 import pdfplumber
 import json
-from langchain_text_splitters import CharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+
 
 # -------------------------------
 # 📄 Load all data
@@ -21,12 +23,12 @@ with open("data/crop_fertilizers.txt", "r", encoding="utf-8") as f:
 # Load JSON
 with open("data/crop_diseases.json", "r", encoding="utf-8") as f:
     data = json.load(f)
-    all_text += json.dumps(data)
+    all_text += json.dumps(data) + "\n"
 
-# Load PDF
+# Load PDFs
 for file in os.listdir("data"):
     if file.endswith(".pdf"):
-        with pdfplumber.open("data/" + file) as pdf:
+        with pdfplumber.open(os.path.join("data", file)) as pdf:
             for page in pdf.pages:
                 text = page.extract_text()
                 if text:
@@ -35,30 +37,38 @@ for file in os.listdir("data"):
 print("✅ Data Loaded")
 
 # -------------------------------
-# ✂️ Chunking
+# ✂️ Chunking (optimized)
 # -------------------------------
-splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=100
+)
+
 docs = splitter.create_documents([all_text])
 
+print(f"📚 Total chunks: {len(docs)}")
+
 # -------------------------------
-# 🧩 Embeddings
+# 🧩 NOMIC EMBEDDINGS
 # -------------------------------
+print("⚡ Loading Nomic embeddings...")
+
 embedding = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-mpnet-base-v2"
+    model_name="nomic-ai/nomic-embed-text-v1",
+    model_kwargs={"trust_remote_code": True}
 )
+
+print("✅ Embeddings ready")
 
 # -------------------------------
 # 🗂️ Create Chroma DB
 # -------------------------------
 vectorstore = Chroma.from_documents(
     docs,
-    embedding,
-    persist_directory="chroma_db"   # 👈 replaces .pkl
+    embedding=embedding,
+    persist_directory="chroma_db"
 )
 
-# -------------------------------
-# 💾 Persist to disk
-# -------------------------------
-vectorstore.persist()
+
 
 print("✅ Chroma DB saved in 'chroma_db/' folder")
