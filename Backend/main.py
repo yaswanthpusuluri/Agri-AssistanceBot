@@ -1,5 +1,5 @@
 # -------------------------------
-# 🌾 Farmer Assistant API (Render Optimized - FINAL)
+# 🌾 Farmer Assistant API (Pinecone + Gemini - LOW RAM)
 # -------------------------------
 
 import os
@@ -9,10 +9,11 @@ from dotenv import load_dotenv
 
 from tavily import TavilyClient
 from langchain_core.tools import tool
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain.agents import create_agent
 
-from langchain_chroma import Chroma
+from langchain_pinecone import PineconeVectorStore
+from pinecone import Pinecone
 
 # -------------------------------
 # INIT
@@ -22,59 +23,38 @@ load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
 
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
 # -------------------------------
-# 🔥 LAZY LOAD EMBEDDINGS (VERY IMPORTANT)
+# 🔥 EMBEDDINGS (API BASED - NO RAM LOAD)
 # -------------------------------
-embeddings = None
-
-def get_embeddings():
-    global embeddings
-    if embeddings is None:
-        print("⚡ Loading Nomic embeddings...")
-
-        from langchain_huggingface import HuggingFaceEmbeddings
-
-        embeddings = HuggingFaceEmbeddings(
-            model_name="nomic-ai/nomic-embed-text-v1",
-            model_kwargs={"trust_remote_code": True}
-        )
-
-        print("✅ Embeddings loaded")
-
-    return embeddings
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/embedding-001",
+    google_api_key=GOOGLE_API_KEY
+)
 
 # -------------------------------
-# 📦 LOAD VECTOR DB (NO EMBEDDINGS HERE)
+# 📦 PINECONE VECTOR STORE
 # -------------------------------
-persist_dir = os.path.join(os.getcwd(), "chroma_db")
+pc = Pinecone(api_key=PINECONE_API_KEY)
 
-if os.path.exists(persist_dir):
-    print("📂 Loading Chroma DB...")
-    vectorstore = Chroma(
-        persist_directory=persist_dir,
-        embedding_function=None   # ❗ important (lazy load later)
-    )
-    print("✅ Chroma DB loaded")
-else:
-    print("⚠️ No Chroma DB found")
-    vectorstore = None
+index = pc.Index(PINECONE_INDEX_NAME)
+
+vectorstore = PineconeVectorStore(
+    index=index,
+    embedding=embeddings
+)
 
 # -------------------------------
 # 🔎 RAG TOOL
 # -------------------------------
 @tool
 def rag_search(query: str) -> str:
-    """Search crop-related knowledge from local database."""
+    """Search crop-related knowledge from Pinecone database."""
     try:
-        if vectorstore is None:
-            return "Knowledge base not available."
-
-        # 🔥 Load embeddings only when needed
-        vectorstore._embedding_function = get_embeddings()
-
         docs = vectorstore.similarity_search(query, k=3)
 
         if not docs:
@@ -106,7 +86,7 @@ def web_search(query: str) -> str:
         return "Web search error"
 
 # -------------------------------
-# 🤖 LLM + AGENT
+# 🤖 LLM
 # -------------------------------
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
@@ -114,6 +94,9 @@ llm = ChatGoogleGenerativeAI(
     google_api_key=GOOGLE_API_KEY
 )
 
+# -------------------------------
+# 🤖 AGENT
+# -------------------------------
 agent = create_agent(
     model=llm,
     tools=[rag_search, web_search],
@@ -121,21 +104,12 @@ agent = create_agent(
 You are a Farmer Support Assistant.
 
 Rules:
-
-1. If question has multiple parts:
-   - Break it into sub-questions
-
-2. Use RAG for:
-   - crops, fertilizers, soil
-
-3. Use web_search for:
-   - market prices, weather, news.
-
-4. You can use BOTH tools if required but do not use your own knowledge.
-
-5. Combine answers clearly.
-
-6. explain answers simply for farmers.
+1. Break complex questions into parts.
+2. Use RAG for crops, fertilizers, soil.
+3. Use web search for weather, prices, news.
+4. Use both tools if needed.
+5. If tools fail, still answer helpfully.
+6. Explain answers simply for farmers.
 """
 )
 
@@ -146,14 +120,14 @@ class Query(BaseModel):
     question: str
 
 # -------------------------------
-# HEALTH CHECK
+# HEALTH
 # -------------------------------
 @app.get("/")
 def health():
     return {"status": "ok"}
 
 # -------------------------------
-# ASK ENDPOINT
+# ASK
 # -------------------------------
 @app.post("/ask")
 def ask(q: Query):
@@ -163,8 +137,6 @@ def ask(q: Query):
         response = agent.invoke({
             "messages": [{"role": "user", "content": q.question}]
         })
-
-        print("🔍 RAW:", response)
 
         text = ""
 
@@ -179,19 +151,8 @@ def ask(q: Query):
         if not text.strip():
             text = "No response generated."
 
-        print("✅ FINAL:", text)
-
         return {"answer": text}
 
     except Exception as e:
         print("❌ ERROR:", e)
         return {"answer": "Server error"}
-
-# -------------------------------
-# RUN
-# -------------------------------
-if __name__ == "__main__":
-    import uvicorn
-
-    port = int(os.environ.get("PORT", 10000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
