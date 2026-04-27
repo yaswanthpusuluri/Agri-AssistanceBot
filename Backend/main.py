@@ -1,5 +1,5 @@
 # -------------------------------
-# 🌾 Farmer Assistant API (Render Optimized)
+# 🌾 Farmer Assistant API (Render Optimized - FINAL)
 # -------------------------------
 
 import os
@@ -13,7 +13,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 
 from langchain_chroma import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # -------------------------------
 # INIT
@@ -27,20 +26,28 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
 # -------------------------------
-# 🔥 LIGHTWEIGHT EMBEDDINGS
+# 🔥 LAZY LOAD EMBEDDINGS (VERY IMPORTANT)
 # -------------------------------
-print("⚡ Loading MiniLM embeddings...")
+embeddings = None
 
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2",
-    model_kwargs={"device": "cpu"},   # force CPU (safe for Render)
-    encode_kwargs={"normalize_embeddings": True}
-)
+def get_embeddings():
+    global embeddings
+    if embeddings is None:
+        print("⚡ Loading Nomic embeddings...")
 
-print("✅ Embeddings loaded")
+        from langchain_huggingface import HuggingFaceEmbeddings
+
+        embeddings = HuggingFaceEmbeddings(
+            model_name="nomic-ai/nomic-embed-text-v1",
+            model_kwargs={"trust_remote_code": True}
+        )
+
+        print("✅ Embeddings loaded")
+
+    return embeddings
 
 # -------------------------------
-# 📦 LOAD VECTOR DB
+# 📦 LOAD VECTOR DB (NO EMBEDDINGS HERE)
 # -------------------------------
 persist_dir = os.path.join(os.getcwd(), "chroma_db")
 
@@ -48,7 +55,7 @@ if os.path.exists(persist_dir):
     print("📂 Loading Chroma DB...")
     vectorstore = Chroma(
         persist_directory=persist_dir,
-        embedding_function=embeddings
+        embedding_function=None   # ❗ important (lazy load later)
     )
     print("✅ Chroma DB loaded")
 else:
@@ -64,6 +71,9 @@ def rag_search(query: str) -> str:
     try:
         if vectorstore is None:
             return "Knowledge base not available."
+
+        # 🔥 Load embeddings only when needed
+        vectorstore._embedding_function = get_embeddings()
 
         docs = vectorstore.similarity_search(query, k=3)
 
@@ -136,7 +146,7 @@ class Query(BaseModel):
     question: str
 
 # -------------------------------
-# HEALTH
+# HEALTH CHECK
 # -------------------------------
 @app.get("/")
 def health():
