@@ -6,9 +6,8 @@ langchain
 langchain-core
 langchain-google-genai
 langchain-pinecone
-langchain-huggingface
-pinecone-client
 
+pinecone
 
 tavily-python
 
