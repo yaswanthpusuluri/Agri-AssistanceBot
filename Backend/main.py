@@ -150,6 +150,9 @@ def health():
 # -------------------------------
 # ASK ENDPOINT
 # -------------------------------
+# -------------------------------
+# ASK ENDPOINT (FIXED)
+# -------------------------------
 @app.post("/ask")
 def ask(q: Query):
     print("📩 Question:", q.question)
@@ -159,25 +162,39 @@ def ask(q: Query):
             "messages": [{"role": "user", "content": q.question}]
         })
 
-        print("🔍 RAW:", response)
-
         text = ""
 
         if isinstance(response, dict):
             msgs = response.get("messages", [])
 
+            # Look for the last message that has content
             for msg in reversed(msgs):
                 if hasattr(msg, "content") and msg.content:
-                    text = msg.content
-                    break
+                    raw_content = msg.content
+                    
+                    # --- FIX STARTS HERE ---
+                    # If content is a list (e.g., [{'text': '...'}, ...]), extract the text
+                    if isinstance(raw_content, list):
+                        parts = []
+                        for part in raw_content:
+                            if isinstance(part, dict):
+                                parts.append(part.get("text", ""))
+                            else:
+                                parts.append(str(part))
+                        text = " ".join(parts)
+                    else:
+                        text = str(raw_content)
+                    # --- FIX ENDS HERE ---
+                    
+                    if text.strip(): # Now text is guaranteed to be a string
+                        break
 
         if not text.strip():
-            text = "No response generated."
+            text = "I couldn't find a specific answer for that. Could you rephrase?"
 
         print("✅ FINAL:", text)
-
         return {"answer": text}
 
     except Exception as e:
         print("❌ ERROR:", e)
-        return {"answer": "Server error"}
+        return {"answer": f"Server error: {str(e)}"}
