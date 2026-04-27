@@ -12,8 +12,5 @@ chromadb
 
 tavily-python
 
-sentence-transformers
-torch
-
 pdfplumber
 requests
